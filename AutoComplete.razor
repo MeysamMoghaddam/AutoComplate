@@ -266,39 +266,50 @@
     {
         ShowLoading = true;
 
-        dynamic d = requestObject.CreateExpandoFromObject();
-
-        if (requestObject.GetType().GetProperty("Value") == null && requestObject.GetType().GetProperty("value") == null)
+        dynamic d;
+        if (requestObject == null)
         {
+            d = new ExpandoObject();
             d.Value = value;
-        }
-        else
-        {
-            if (requestObject.GetType().GetProperty("Value") != null)
-            {
-                d.Value = value;
-
-            }
-            else if (requestObject.GetType().GetProperty("value") != null)
-            {
-                d.value = value;
-
-            }
-        }
-        if (requestObject.GetType().GetProperty("text") == null && requestObject.GetType().GetProperty("Text") == null)
-        {
             d.Text = text;
         }
         else
         {
-            if (requestObject.GetType().GetProperty("Text") != null)
+            d = requestObject.CreateExpandoFromObject();
+
+            #region SetText And Value In requestObject
+            if (requestObject.GetType().GetProperty("Value") == null && requestObject.GetType().GetProperty("value") == null)
+            {
+                d.Value = value;
+            }
+            else
+            {
+                if (requestObject.GetType().GetProperty("Value") != null)
+                {
+                    d.Value = value;
+                }
+                else if (requestObject.GetType().GetProperty("value") != null)
+                {
+                    d.value = value;
+                }
+            }
+            if (requestObject.GetType().GetProperty("text") == null && requestObject.GetType().GetProperty("Text") == null)
             {
                 d.Text = text;
             }
-            else if (requestObject.GetType().GetProperty("text") != null)
+            else
             {
-                d.text = text;
+                if (requestObject.GetType().GetProperty("Text") != null)
+                {
+                    d.Text = text;
+                }
+                else if (requestObject.GetType().GetProperty("text") != null)
+                {
+                    d.text = text;
+                }
             }
+            #endregion
+
         }
 
         var resultList = await Http.PostAsJsonAsync(ApiAddress, (object)d);
