@@ -1,0 +1,351 @@
+﻿@namespace ForsatBlazor
+@using System.Dynamic
+<div class="dropdown w-100">
+    <div class="input-group">
+        <div class="input-group-append ">
+            @if (ShowLoading)
+            {
+                <span class="btn btn-outline-info">
+
+                    <div class="spinner-border text-white spinner-border-sm" role="status">
+                        <span class="sr-only">Loading...</span>
+                    </div>
+                </span>
+
+            }
+            else
+            {
+                <span class="btn btn-outline-info"><i class="@FaIcon"></i></span>
+
+            }
+        </div>
+        <input placeholder="@Placeholder" @onkeydown="@((p)=> { OnKeyPress(p); })" @oninput="@(async (e) => { ItemHilightCounter = 0; await FilterAsync(e.Value.ToString());if (DataSources.Any()) { DataSources[ItemHilightCounter].Active = "Active"; };InputText = e.Value.ToString(); Showclose = false;OnSelected.InvokeAsync(new AutoComplateSelectList()); })" @onfocusin="@(async() => { ItemHilightCounter = 0;await FilterAsync(InputText); displayItems = true;if (DataSources.Any()) { DataSources[ItemHilightCounter].Active = "Active"; }; })" @onfocusout="@(() => {DataSources.ForEach(f => f.Active = ""); displayItems = false;DataSources.Clear();  })" value="@InputText" class="form-control searchInput border-left-0">
+        @if (Showclose)
+        {
+            <div class="input-group-prepend" style="cursor:pointer;" @onclick="()=> { InputText=string.Empty;OnSelected.InvokeAsync(new AutoComplateSelectList());Showclose = false; }">
+                <span class="input-group-text bg-white border-right-0"><i class="fas fa-times"></i></span>
+            </div>
+            @*<span style="position: absolute; left: 14px; top: 10px;cursor:pointer" @onclick="()=> { InputText=string.Empty;OnSelected.InvokeAsync(null);Showclose = false; }">&times;</span>*@
+        }
+        else
+        {
+            <div class="input-group-prepend">
+                <span class="input-group-text bg-white border-right-0"><i class="fas fa-angle-down"></i></span>
+            </div>
+        }
+    </div>
+
+
+    @if (displayItems)
+    {
+        @if (DataSources.Any())
+        {
+            <div class="comboBoxItems overflow-auto text-right">
+                @foreach (var item in DataSources)
+                {
+                    <div @onmousedown="()=>OnItemSelected(item)" class="p-2 text-right @("itemBlock_" + item.Active)" @onmouseover="@(() => { ItemHilightCounter = 0;  item.Active = "Active"; })" @onmouseout="@(() => { ItemHilightCounter = 0; item.Active = "";})">
+                        @if (!string.IsNullOrEmpty(item.ImageAddress))
+                        {
+                            <div class="combo-photo" style="background-image: url(../@item.ImageAddress);"></div>
+                        }
+                        <div class="combo-name text-right">@item.Text</div>
+                    </div>
+
+                }
+
+            </div>
+            @*<div class="dropdown-menu dropdown-menu-right d-block text-right w-100" style="height:200px;overflow:scroll;">
+
+                    @foreach (var item in DataSources)
+                    {
+
+                        <div @onmousedown="() => { OnSelected.InvokeAsync(item.Value);InputText = item.Text; displayItems = false;Showclose = true; }" class="dropdown-item">
+                            <div class="combo-photo" style="background-image: url(../@item.ImageAddress);"></div>
+                            <div class="combo-name">@item.Text</div>
+                        </div>
+
+                    }
+                </div>*@
+
+        }
+        else if (!DataSources.Any() && string.IsNullOrEmpty(currentValue))
+        {
+            <div class="dropdown-menu dropdown-menu-right d-block text-center w-100 p-4" style="height:70px; ">
+                <span class="alert alert-info ">موردی وجود ندارد</span>
+            </div>
+
+        }
+    }
+</div>
+
+@code{
+    private bool displayItems = false;
+    private bool Showclose = false;
+    private bool ShowLoading = false;
+    private string InputText = "";
+
+    [Parameter]
+    public string ValueFieldName { get; set; } = "Value";
+
+    [Parameter]
+    public string TitleFieldName { get; set; } = "Text";
+
+    [Parameter]
+    public string ImageFieldName { get; set; } = "";
+
+    [Parameter]
+    public string currentValue { get; set; }
+    private string OldcurrentValue;
+    private int ItemHilightCounter;
+
+    [Parameter]
+    public string ApiAddress { get; set; }
+
+    //[Parameter]
+    //public Request requestObject { get; set; } = new Request();
+
+    [Parameter]
+    public string Placeholder { get; set; } = "انتخاب کنید";
+
+    [Parameter]
+    public string FaIcon { get; set; } = "far fa-caret-square-down";
+
+    [Parameter]
+    public bool ServerFilter { get; set; } = false;
+
+    private List<AutoComplateSelectList> DataSources { get; set; } = new List<AutoComplateSelectList>();
+    private List<AutoComplateSelectList> OfflineDataSources { get; set; } = new List<AutoComplateSelectList>();
+
+    [Parameter]
+    public EventCallback<AutoComplateSelectList> OnSelected { get; set; }
+
+    [Parameter]
+    public object requestObject { get; set; }
+    //public dynamic requestObject { get; set; } = new ExpandoObject();
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        OldcurrentValue = currentValue;
+        if (ServerFilter)
+        {
+            if (!string.IsNullOrEmpty(currentValue) && currentValue != "0")
+            {
+                await GetListAsync("", currentValue);
+            }
+        }
+        else
+        {
+            if (!string.IsNullOrEmpty(currentValue) && currentValue != "0")
+            {
+                await FilterAsync("", currentValue);
+            }
+            else
+            {
+                await FilterAsync("");
+
+            }
+        }
+    }
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!string.IsNullOrEmpty(currentValue))
+        {
+            if (!string.IsNullOrEmpty(currentValue) && OldcurrentValue != currentValue)
+            {
+                await FilterAsync(InputText, currentValue);
+                OldcurrentValue = currentValue;
+                StateHasChanged();
+            }
+        }
+
+
+    }
+
+    private async Task OnItemSelected(AutoComplateSelectList item)
+    {
+        OldcurrentValue = item.Value;
+        OnSelected.InvokeAsync(item);
+        InputText = item.Text;
+        displayItems = false;
+        Showclose = true;
+    }
+    private async Task OnKeyPress(KeyboardEventArgs args)
+    {
+        if (args.Key == "ArrowDown" || args.Key == "ArrowUp")
+        {
+            DataSources.ForEach(f => f.Active = "");
+            if (args.Key == "ArrowDown")
+            {
+
+
+                if (ItemHilightCounter < (DataSources.Count() - 1))
+                {
+                    ItemHilightCounter++;
+
+                }
+                DataSources[ItemHilightCounter].Active = "Active";
+
+
+
+
+            }
+            else
+            {
+                if (ItemHilightCounter > 0)
+                {
+                    ItemHilightCounter--;
+
+                }
+                DataSources[ItemHilightCounter].Active = "Active";
+
+            }
+
+        }
+        else if (args.Key == "Enter")
+        {
+            if (DataSources.Any(a => a.Active == "Active"))
+            {
+                await OnItemSelected(DataSources.FirstOrDefault(f => f.Active == "Active"));
+
+            }
+        }
+        else
+        {
+            DataSources.ForEach(f => f.Active = "");
+        }
+        StateHasChanged();
+    }
+    private async Task FilterAsync(string text, string value = null)
+    {
+
+        if (ServerFilter)
+        {
+            await GetListAsync(text, value);
+        }
+        else
+        {
+            if (OfflineDataSources.Any())
+            {
+                await FilterOfflineDataSourcesAsync(text, value);
+
+            }
+            else
+            {
+                await GetListAsync(text);
+                await FilterOfflineDataSourcesAsync(text, value);
+
+            }
+        }
+        StateHasChanged();
+    }
+    private async Task FilterOfflineDataSourcesAsync(string text, string value = null)
+    {
+        DataSources = OfflineDataSources.Where(w => !String.IsNullOrEmpty(text) ? w.Text.Contains(text) : true).ToList();
+        if (!string.IsNullOrEmpty(value) && value != "0")
+        {
+            InputText = OfflineDataSources.FirstOrDefault(p => p.Value == value).Text;
+            Showclose = true;
+            DataSources.Clear();
+
+        }
+        if ((string.IsNullOrEmpty(value) || value == "0") && String.IsNullOrEmpty(text))
+        {
+            InputText = "";
+            displayItems = false;
+
+        }
+        else
+        {
+            displayItems = true;
+        }
+    }
+
+
+    private async Task GetListAsync(string text, string value = null)
+    {
+        ShowLoading = true;
+
+        dynamic d = requestObject.CreateExpandoFromObject();
+
+        if (requestObject.GetType().GetProperty("Value") == null && requestObject.GetType().GetProperty("value") == null)
+        {
+            d.Value = value;
+        }
+        else
+        {
+            if (requestObject.GetType().GetProperty("Value") != null)
+            {
+                d.Value = value;
+
+            }
+            else if (requestObject.GetType().GetProperty("value") != null)
+            {
+                d.value = value;
+
+            }
+        }
+        if (requestObject.GetType().GetProperty("text") == null && requestObject.GetType().GetProperty("Text") == null)
+        {
+            d.Text = text;
+        }
+        else
+        {
+            if (requestObject.GetType().GetProperty("Text") != null)
+            {
+                d.Text = text;
+            }
+            else if (requestObject.GetType().GetProperty("text") != null)
+            {
+                d.text = text;
+            }
+        }
+
+        var resultList = await Http.PostAsJsonAsync(ApiAddress, (object)d);
+        if (resultList.StatusCode == HttpStatusCode.OK)
+        {
+            var jsonstr = await resultList.Content.ReadAsStringAsync();
+            var objects = Newtonsoft.Json.Linq.JArray.Parse(jsonstr); // parse as array
+
+            //generate Model
+            var Model = objects.Select(p => new AutoComplateSelectList
+            {
+                ImageAddress = !string.IsNullOrEmpty(ImageFieldName) ? (String)p[ImageFieldName] : "",
+                Text = (String)p[TitleFieldName],
+                Value = (String)p[ValueFieldName],
+
+            }).ToList();
+            if (ServerFilter)
+            {
+                DataSources = Model;
+                if (DataSources.Any())
+                {
+                    displayItems = true;
+                }
+            }
+            else
+            {
+                OfflineDataSources = Model;
+
+            }
+            if (!string.IsNullOrEmpty(value))
+            {
+                InputText = ServerFilter ? DataSources.FirstOrDefault(p => p.Value == value).Text : OfflineDataSources.FirstOrDefault(p => p.Value == value).Text;
+                Showclose = true;
+                DataSources.Clear();
+
+            }
+
+        }
+        else
+        {
+            DataSources.Clear();
+
+        }
+
+
+        ShowLoading = false;
+
+        StateHasChanged();
+    }
+}
