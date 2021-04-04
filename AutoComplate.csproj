@@ -4,6 +4,13 @@
     <TargetFramework>net5.0</TargetFramework>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageId>BlazorAutoComplate</PackageId>
+    <PackageProjectUrl>https://github.com/MeysamMoghaddam/AutoComplate</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/MeysamMoghaddam/AutoComplate</RepositoryUrl>
+    <PackageTags>Blazor</PackageTags>
+    <PackageIcon>logo.png</PackageIcon>
+    <Authors>Meysam Masoud</Authors>
+    <Description>AutoComplate And Searchable DropDown</Description>
+    <Copyright>© Moghaddam. All rights reserved.</Copyright>
   </PropertyGroup>
 
   
@@ -18,6 +25,13 @@
 
   <ItemGroup>
     <Folder Include="wwwroot\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="logo.png">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
   </ItemGroup>
 
 </Project>
