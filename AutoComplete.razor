@@ -43,7 +43,7 @@
             <div class="comboBoxItems overflow-auto text-right">
                 @foreach (var item in DataSources)
                 {
-                    <div @onmousedown="()=>OnItemSelected(item)" class="p-2 text-right @("itemBlock_" + item.Active)" @onmouseover="@(() => { ItemHilightCounter = 0;  item.Active = "Active"; })" @onmouseout="@(() => { ItemHilightCounter = 0; item.Active = "";})">
+                    <div @onmousedown="()=>OnItemSelected(item)" class="p-2 text-right @("itemBlock_" + item.Active)" style="cursor:pointer !important;" @onmouseover="@(() => { ItemHilightCounter = 0;  item.Active = "Active"; })" @onmouseout="@(() => { ItemHilightCounter = 0; item.Active = "";})">
                         @if (!string.IsNullOrEmpty(item.ImageAddress))
                         {
                             <div class="combo-photo" style="background-image: url(../@item.ImageAddress);"></div>
