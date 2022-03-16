@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace AutoComplate
+namespace Ma2AutoComplate
 {
-  
+
     public class AutoComplateSelectList
     {
         public string Text { get; set; }

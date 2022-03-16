@@ -1,5 +1,6 @@
-﻿@namespace ForsatBlazor
+﻿@namespace Ma2AutoComplate
 @using System.Dynamic
+@using System.Timers
 <div class="dropdown w-100">
     <div class="input-group">
         <div class="input-group-append ">
@@ -15,22 +16,23 @@
             }
             else
             {
-                <span class="btn btn-outline-info"><i class="@FaIcon"></i></span>
+                <span class="btn search-right-btn"><i class="@FaIcon"></i></span>
 
             }
         </div>
-        <input placeholder="@Placeholder" @onkeydown="@((p)=> { OnKeyPress(p); })" @oninput="@(async (e) => { ItemHilightCounter = 0; await FilterAsync(e.Value.ToString());if (DataSources.Any()) { DataSources[ItemHilightCounter].Active = "Active"; };InputText = e.Value.ToString(); Showclose = false;OnSelected.InvokeAsync(new AutoComplateSelectList()); })" @onfocusin="@(async() => { ItemHilightCounter = 0;await FilterAsync(InputText); displayItems = true;if (DataSources.Any()) { DataSources[ItemHilightCounter].Active = "Active"; }; })" @onfocusout="@(() => {DataSources.ForEach(f => f.Active = ""); displayItems = false;DataSources.Clear();  })" value="@InputText" class="form-control searchInput border-left-0">
+        @*<input placeholder="@Placeholder" @onkeydown="@((p)=> { OnKeyPress(p); })" @oninput="@(async (e) => { ItemHilightCounter = 0; await FilterAsync(e.Value.ToString());if (DataSources.Any()) { DataSources[ItemHilightCounter].Active = "Active"; };InputText = e.Value.ToString(); Showclose = false;OnSelected.InvokeAsync(new AutoComplateSelectList()); })" @onfocusin="@(async() => { ItemHilightCounter = 0;if(!string.IsNullOrEmpty(InputText)){await FilterAsync(InputText);}; displayItems = true;if (DataSources.Any()) { DataSources[ItemHilightCounter].Active = "Active"; }; })" @onfocusout="@(() => {DataSources.ForEach(f => f.Active = ""); displayItems = false;DataSources.Clear();  })" value="@InputText" class="form-control searchInput border-left-0">*@
+        <input placeholder="@Placeholder" @onkeydown="@((p)=> { OnKeyPress(p); })" @onkeyup="@HandleKeyUp" @onfocusin="@(async() => { ItemHilightCounter = 0;if(!string.IsNullOrEmpty(InputText)){await FilterAsync(InputText);}; displayItems = true;if (DataSources.Any()) { DataSources[ItemHilightCounter].Active = "Active"; }; })" @onfocusout="@(() => {DataSources.ForEach(f => f.Active = ""); displayItems = false;DataSources.Clear();  })" @bind-value="InputText" @bind-value:event="oninput" class="form-control searchInput border-left-0">
         @if (Showclose)
         {
-            <div class="input-group-prepend" style="cursor:pointer;" @onclick="()=> { InputText=string.Empty;OnSelected.InvokeAsync(new AutoComplateSelectList());Showclose = false; }">
-                <span class="input-group-text bg-white border-right-0"><i class="fas fa-times"></i></span>
+            <div class="input-group-prepend" style="cursor:pointer;" @onclick="OnClickCloseBtn">
+                <span class="btn search-left-btn"><i class="fas fa-times"></i></span>
             </div>
             @*<span style="position: absolute; left: 14px; top: 10px;cursor:pointer" @onclick="()=> { InputText=string.Empty;OnSelected.InvokeAsync(null);Showclose = false; }">&times;</span>*@
         }
         else
         {
             <div class="input-group-prepend">
-                <span class="input-group-text bg-white border-right-0"><i class="fas fa-angle-down"></i></span>
+                <span class="btn search-left-btn"><i class="fas fa-angle-down"></i></span>
             </div>
         }
     </div>
@@ -43,7 +45,7 @@
             <div class="comboBoxItems overflow-auto text-right">
                 @foreach (var item in DataSources)
                 {
-                    <div @onmousedown="()=>OnItemSelected(item)" class="p-2 text-right @("itemBlock_" + item.Active)" style="cursor:pointer !important;" @onmouseover="@(() => { ItemHilightCounter = 0;  item.Active = "Active"; })" @onmouseout="@(() => { ItemHilightCounter = 0; item.Active = "";})">
+                    <div @onmousedown="()=>OnItemSelected(item)" class="p-2 text-right @("itemBlock_" + item.Active)" @onmouseover="@(() => { ItemHilightCounter = 0;  item.Active = "Active"; })" @onmouseout="@(() => { ItemHilightCounter = 0; item.Active = "";})">
                         @if (!string.IsNullOrEmpty(item.ImageAddress))
                         {
                             <div class="combo-photo" style="background-image: url(../@item.ImageAddress);"></div>
@@ -56,15 +58,15 @@
             </div>
             @*<div class="dropdown-menu dropdown-menu-right d-block text-right w-100" style="height:200px;overflow:scroll;">
 
-                    @foreach (var item in DataSources)
-                    {
+                @foreach (var item in DataSources)
+                {
 
-                        <div @onmousedown="() => { OnSelected.InvokeAsync(item.Value);InputText = item.Text; displayItems = false;Showclose = true; }" class="dropdown-item">
-                            <div class="combo-photo" style="background-image: url(../@item.ImageAddress);"></div>
-                            <div class="combo-name">@item.Text</div>
-                        </div>
+                <div @onmousedown="() => { OnSelected.InvokeAsync(item.Value);InputText = item.Text; displayItems = false;Showclose = true; }" class="dropdown-item">
+                <div class="combo-photo" style="background-image: url(../@item.ImageAddress);"></div>
+                <div class="combo-name">@item.Text</div>
+                </div>
 
-                    }
+                }
                 </div>*@
 
         }
@@ -78,12 +80,12 @@
     }
 </div>
 
-@code{
+@code {
     private bool displayItems = false;
     private bool Showclose = false;
     private bool ShowLoading = false;
     private string InputText = "";
-
+    private Timer aTimer;
     [Parameter]
     public string ValueFieldName { get; set; } = "Value";
 
@@ -93,8 +95,23 @@
     [Parameter]
     public string ImageFieldName { get; set; } = "";
 
+    string _currentValue;
+
     [Parameter]
-    public string currentValue { get; set; }
+    public string currentValue {
+        get
+        {
+            return _currentValue;
+        }
+        set
+        {
+            if(value !=null)
+            {
+                _currentValue=value;
+                OnChangeCurrentValue(value);
+            }
+        }
+    }
     private string OldcurrentValue;
     private int ItemHilightCounter;
 
@@ -121,11 +138,57 @@
 
     [Parameter]
     public object requestObject { get; set; }
+
+    async Task OnClickCloseBtn()
+    {
+        InputText = string.Empty;
+        await OnSelected.InvokeAsync(new AutoComplateSelectList { Value = "0" });
+        Showclose = false;
+        StateHasChanged();
+    }
     //public dynamic requestObject { get; set; } = new ExpandoObject();
-
-
+    void HandleKeyUp(KeyboardEventArgs e)
+    {
+        // remove previous one
+        aTimer.Stop();
+        // new timer
+        aTimer.Start();
+        //IsLoading = true;
+        StateHasChanged();
+    }
+    private void OnUserFinish(Object source, ElapsedEventArgs e)
+    {
+        OnSelected.InvokeAsync(new AutoComplateSelectList());
+        InvokeAsync(async () =>
+         {
+             await FilterAsync(InputText);
+             if (DataSources.Any())
+             {
+                 DataSources[ItemHilightCounter].Active = "Active";
+             }
+         //IsLoading = false;
+         StateHasChanged();
+         });
+    }
+    async Task OnChangeCurrentValue(string value)
+    {
+        if (!string.IsNullOrEmpty(value))
+        {
+            if (!string.IsNullOrEmpty(value) && OldcurrentValue != value)
+            {
+                await FilterAsync(InputText, value);
+                OldcurrentValue = value;
+                StateHasChanged();
+            }
+        }
+    }
     protected override async Task OnInitializedAsync()
     {
+        aTimer = new Timer(500);
+        aTimer.Elapsed += OnUserFinish;
+        aTimer.AutoReset = false;
+
+
         OldcurrentValue = currentValue;
         if (ServerFilter)
         {
@@ -147,20 +210,7 @@
             }
         }
     }
-    protected override async Task OnParametersSetAsync()
-    {
-        if (!string.IsNullOrEmpty(currentValue))
-        {
-            if (!string.IsNullOrEmpty(currentValue) && OldcurrentValue != currentValue)
-            {
-                await FilterAsync(InputText, currentValue);
-                OldcurrentValue = currentValue;
-                StateHasChanged();
-            }
-        }
-
-
-    }
+    
 
     private async Task OnItemSelected(AutoComplateSelectList item)
     {
@@ -312,7 +362,9 @@
 
         }
 
-        var resultList = await Http.PostAsJsonAsync(ApiAddress, (object)d);
+
+        var AutocopleteHttp = new HttpClient();
+        var resultList = await AutocopleteHttp.PostAsJsonAsync(ApiAddress, (object)d);
         if (resultList.StatusCode == HttpStatusCode.OK)
         {
             var jsonstr = await resultList.Content.ReadAsStringAsync();
@@ -320,12 +372,12 @@
 
             //generate Model
             var Model = objects.Select(p => new AutoComplateSelectList
-            {
-                ImageAddress = !string.IsNullOrEmpty(ImageFieldName) ? (String)p[ImageFieldName] : "",
-                Text = (String)p[TitleFieldName],
-                Value = (String)p[ValueFieldName],
+                {
+                    ImageAddress = !string.IsNullOrEmpty(ImageFieldName) ? (String)p[ImageFieldName] : "",
+                    Text = (String)p[TitleFieldName],
+                    Value = (String)p[ValueFieldName],
 
-            }).ToList();
+                }).ToList();
             if (ServerFilter)
             {
                 DataSources = Model;

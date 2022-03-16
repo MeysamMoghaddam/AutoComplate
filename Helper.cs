@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace AutoComplate
+namespace Ma2AutoComplate
 {
     public static class Helper
     {

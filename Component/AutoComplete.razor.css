@@ -43,3 +43,18 @@
     border-bottom-right-radius: 3px;
     border-bottom-left-radius: 3px;
 }
+.search-left-btn {
+    color: #6c757d;
+    border-color: #ced4da;
+    border-right: none;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.search-right-btn {
+    color: #6c757d;
+    border-color: #ced4da;
+    border-left: none;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
