@@ -100,6 +100,9 @@ namespace Ma2AutoComplate
         public bool Disabled { get; set; } = false;
 
         [Parameter]
+        public bool SearchOnFocus { get; set; } = false;
+
+        [Parameter]
         public FieldIdentifier FieldIdentifier { get; set; }
 
 
@@ -193,7 +196,23 @@ namespace Ma2AutoComplate
             Loading = false;
             StateHasChanged();
         }
+        public async Task OnClickControl()
+        {
+            if (SearchOnFocus)
+            {
+                Loading = true;
+                StateHasChanged();
 
+                var result = await SearchMethod(_searchText);
+
+                SearchResults = result == null
+                    ? new List<TItem>()
+                    : result.ToList();
+
+                Loading = false;
+                StateHasChanged();
+            }
+        }
         public async Task SelectResult(TItem item)
         {
             var value = ConvertMethod(item);
@@ -248,6 +267,7 @@ namespace Ma2AutoComplate
 
             // need to wait for search input to render
             _pending.Enqueue(() => SearchInput.FocusAsync().AsTask());
+
         }
 
         public void CloseMenu()

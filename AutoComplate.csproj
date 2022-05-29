@@ -11,10 +11,10 @@
     <Authors>Meysam Masoud</Authors>
     <Description>AutoComplate And Searchable DropDown</Description>
     <Copyright>© Moghaddam. All rights reserved.</Copyright>
-    <Version>1.1.4</Version>
-    <PackageReleaseNotes>Add "cursor:pointer" for iphone ios</PackageReleaseNotes>
+    <Version>1.2.4</Version>
+    <PackageReleaseNotes>Add search on focus control</PackageReleaseNotes>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <AssemblyVersion>1.1.4</AssemblyVersion>
+    <AssemblyVersion>1.2.4</AssemblyVersion>
   </PropertyGroup>
 
   
